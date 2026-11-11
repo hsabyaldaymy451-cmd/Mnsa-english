@@ -22,7 +22,11 @@ if "grades" not in st.session_state:
 if "announcements" not in st.session_state:
     st.session_state.announcements = ["📢 أهلاً بكم في الأكاديمية! ترقبوا المحاضرة الأولى قريباً."]
 if "messages" not in st.session_state:
-    st.session_state.messages = {}  # حفظ رسائل الطلاب والأستاذة
+    st.session_state.messages = {}  
+if "lectures" not in st.session_state:
+    st.session_state.lectures = [
+        {"title": "المحاضرة الأولى: شرح القواعد الأساسية", "url": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"}
+    ]
 
 # 1. شاشة تسجيل الدخول أو إنشاء حساب
 if not st.session_state.logged_in:
@@ -56,11 +60,10 @@ if not st.session_state.logged_in:
 else:
     user_info = st.session_state.users[st.session_state.current_user]
     
-    # القائمة الجانبية بناءً على نوع المستخدم (أستاذة أو طالب)
     st.sidebar.title(f"👤 مرحبًا، {user_info['name']}")
     
     if user_info["role"] == "teacher":
-        menu = ["📊 لوحة التحكم وإدارة الطلاب", "📢 نشر التنبيهات (القناة)", "💬 صندوق رسائل الطلاب", "🎬 المحاضرات", "🎙️ البث المباشر"]
+        menu = ["📊 لوحة التحكم وإدارة الطلاب", "📢 نشر التنبيهات (القناة)", "💬 صندوق رسائل الطلاب", "🎬 إدارة المحاضرات", "🎙️ البث المباشر"]
     else:
         menu = ["📢 قناة التنبيهات والتعاميم", "🎬 محاضراتي وملحقاتها", "🎙️ غرفة البث المباشر", "📝 الاختبارات والواجبات", "💬 مراسلة الأستاذة"]
         
@@ -105,18 +108,28 @@ else:
             st.header("💬 رسائل واستفسارات الطلاب الخاصة")
             if st.session_state.messages:
                 for student_email, msg_list in st.session_state.messages.items():
-                    student_name = st.session_state.users.get(student_email, {}).get(
-                        "name", student_email
-                    )
+                    student_name = st.session_state.users.get(student_email, {}).get("name", student_email)
                     with st.expander(f"محادثة مع الطالب: {student_name}"):
                         for m in msg_list:
                             st.write(f"- {m}")
             else:
                 st.info("لا توجد رسائل جديدة من الطلاب حالياً.")
 
-        elif choice == "🎬 المحاضرات":
-            st.header("🎬 إدارة المحاضرات والدروس")
-            st.info("يمكنك تضمين فيديوهات اليوتيوب للدروس هنا بسهولة.")
+        elif choice == "🎬 إدارة المحاضرات":
+            st.header("🎬 إضافة ونشر المحاضرات للطلاب")
+            lec_title = st.text_input("عنوان المحاضرة (مثلا: Unit 1 - Grammar):")
+            lec_url = st.text_input("رابط فيديو يوتيوب للدرس:")
+            if st.button("نشر المحاضرة للمنصة"):
+                if lec_title and lec_url:
+                    st.session_state.lectures.append({"title": lec_title, "url": lec_url})
+                    st.success("تم نشر المحاضرة بنجاح وصارت متاحة لجميع الطلاب!")
+                else:
+                    st.warning("يرجى إدخال العنوان والرابط معاً.")
+            
+            st.markdown("---")
+            st.subheader("المحاضرات الحالية المنشورة:")
+            for idx, lec in enumerate(st.session_state.lectures):
+                st.write(f"{idx+1}. **{lec['title']}** -> ({lec['url']})")
 
         elif choice == "🎙️ البث المباشر":
             st.header("🎙️ غرفة البث المباشر الخاصة بالأستاذة")
@@ -136,13 +149,13 @@ else:
 
         elif choice == "🎬 محاضراتي وملحقاتها":
             st.header("🎬 المحاضرات والدروس المسجلة")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("📺 المحاضرة الأولى (شرح القواعد)")
-                st.video("https://www.youtube.com/watch?v=kJQP7kiw5Fk")
-            with col2:
-                st.subheader("📁 ملحقات الدرس")
-                st.download_button("📥 تحميل ملزمة الشرح (PDF)", data="محتوى ملف الملزمة التجريبي", file_name="Unit1_Notes.pdf")
+            for lec in st.session_state.lectures:
+                st.subheader(f"📺 {lec['title']}")
+                st.video(lec['url'])
+                st.markdown("---")
+            
+            st.subheader("📁 ملحقات الدروس والملزمات")
+            st.download_button("📥 تحميل ملزمة الشرح (PDF)", data="محتوى ملف الملزمة التجريبي", file_name="Academy_Notes.pdf")
 
         elif choice == "🎙️ غرفة البث المباشر":
             st.header("🎙️ قاعة المحاضرة المباشرة")
@@ -168,8 +181,4 @@ else:
             if st.button("إرسال الرسالة"):
                 if user_msg:
                     if st.session_state.current_user not in st.session_state.messages:
-                        st.session_state.messages[st.session_state.current_user] = []
-                    st.session_state.messages[st.session_state.current_user].append(f"الطالب: {user_msg}")
-                    st.success("تم إرسال رسالتك إلى الأستاذة بنجاح!")
-                else:
-                    st.warning("يرجى كتابة النص قبل الإرسال.")
+                        st.session_state.messages
