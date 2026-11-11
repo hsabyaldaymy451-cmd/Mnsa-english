@@ -27,6 +27,15 @@ if "lectures" not in st.session_state:
     st.session_state.lectures = [
         {"title": "المحاضرة الأولى: شرح القواعد الأساسية", "url": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"}
     ]
+# نظام الاختبارات التفاعلية على غرار قنوات التلغرام
+if "quizzes" not in st.session_state:
+    st.session_state.quizzes = [
+        {
+            "question": "Choose the correct: She ___ to school every day.",
+            "options": ["go", "goes", "going"],
+            "answer": "goes"
+        }
+    ]
 
 # 1. شاشة تسجيل الدخول أو إنشاء حساب
 if not st.session_state.logged_in:
@@ -63,9 +72,9 @@ else:
     st.sidebar.title(f"👤 مرحبًا، {user_info['name']}")
     
     if user_info["role"] == "teacher":
-        menu = ["📊 لوحة التحكم وإدارة الطلاب", "📢 نشر التنبيهات (القناة)", "💬 صندوق رسائل الطلاب", "🎬 إدارة المحاضرات", "🎙️ البث المباشر"]
+        menu = ["📊 لوحة التحكم وإدارة الطلاب", "📢 نشر التنبيهات (القناة)", "✍️ إنشاء اختبار (مثل التلغرام)", "💬 صندوق رسائل الطلاب", "🎬 إدارة المحاضرات", "🎙️ البث المباشر"]
     else:
-        menu = ["📢 قناة التنبيهات والتعاميم", "🎬 محاضراتي وملحقاتها", "🎙️ غرفة البث المباشر", "📝 الاختبارات والواجبات", "💬 مراسلة الأستاذة"]
+        menu = ["📢 قناة التنبيهات والتعاميم", "🎬 محاضراتي وملحقاتها", "🎙️ غرفة البث المباشر", "📝 اختبارات الأكاديمية", "💬 مراسلة الأستاذة"]
         
     choice = st.sidebar.selectbox("القائمة الرئيسية", menu)
     
@@ -104,6 +113,26 @@ else:
                 else:
                     st.warning("يرجى كتابة نص التنبيه أولاً.")
 
+        elif choice == "✍️ إنشاء اختبار (مثل التلغرام)":
+            st.header("✍️ نشر اختبار تفاعلي جديد")
+            st.info("اكتب السؤال والخيارات، وحدد الإجابة الصحيحة لنشرها للطلاب:")
+            q_text = st.text_input("نص السؤال:")
+            opt1 = st.text_input("الخيار الأول:")
+            opt2 = st.text_input("الخيار الثاني:")
+            opt3 = st.text_input("الخيار الثالث:")
+            correct_opt = st.text_input("اكتب الإجابة الصحيحة بالضبط (نفس إحدى الخيارات أعلاه):")
+            
+            if st.button("نشر الاختبار للطلاب"):
+                if q_text and opt1 and opt2 and opt3 and correct_opt:
+                    st.session_state.quizzes.append({
+                        "question": q_text,
+                        "options": [opt1, opt2, opt3],
+                        "answer": correct_opt
+                    })
+                    st.success("تم نشر الاختبار بنجاح وصار متاحاً للطلاب كاستطلاع تفاعلي!")
+                else:
+                    st.warning("يرجى ملء كافة الحقول وتحديد الإجابة الصحيحة.")
+
         elif choice == "💬 صندوق رسائل الطلاب":
             st.header("💬 رسائل واستفسارات الطلاب الخاصة")
             if st.session_state.messages:
@@ -125,11 +154,6 @@ else:
                     st.success("تم نشر المحاضرة بنجاح وصارت متاحة لجميع الطلاب!")
                 else:
                     st.warning("يرجى إدخال العنوان والرابط معاً.")
-            
-            st.markdown("---")
-            st.subheader("المحاضرات الحالية المنشورة:")
-            for idx, lec in enumerate(st.session_state.lectures):
-                st.write(f"{idx+1}. **{lec['title']}** -> ({lec['url']})")
 
         elif choice == "🎙️ البث المباشر":
             st.header("🎙️ غرفة البث المباشر الخاصة بالأستاذة")
@@ -158,22 +182,29 @@ else:
             st.download_button("📥 تحميل ملزمة الشرح (PDF)", data="محتوى ملف الملزمة التجريبي", file_name="Academy_Notes.pdf")
 
         elif choice == "🎙️ غرفة البث المباشر":
-            st.header("🎙️ قاعة المحاضرة المباشرة")
+            st.header("🎙️ غرفة قاعة المحاضرة المباشرة")
             st.success("انضم الآن إلى قاعة الدرس مع الأستاذة:")
             jitsi_html = '<iframe src="https://meet.jit.si/MomEnglishAcademy2026" height="550px" width="100%" style="border:none; border-radius:12px;" allow="camera; microphone; display-capture; autoplay"></iframe>'
             components.html(jitsi_html, height=570)
 
-        elif choice == "📝 الاختبارات والواجبات":
-            st.header("✍️ اختبار القواعد الأسبوعي (Quiz)")
-            q1 = st.radio("اختر الخيار الصحيح للجملة: She ___ to school every day.", ["go", "goes", "going"])
+        elif choice == "📝 اختبارات الأكاديمية":
+            st.header("✍️ اختبارات القواعد والواجبات (نظام القناة)")
+            st.info("هنا تظهر الاختبارات التي تنشرها الأستاذة تباعاً:")
             
-            if st.button("إرسال الإجابة للأستاذة"):
-                score = "صحيحة (10/10)" if q1 == "goes" else "خاطئة (0/10)"
-                st.session_state.grades[user_info['name']] = score
-                if q1 == "goes":
-                    st.success("أحسنتِ! تم إرسال إجابتكِ ودرجتكِ إلى لوحة تحكم الأستاذة بنجاح.")
-                else:
-                    st.error("إجابة خاطئة، تم تسجيل المحاولة وإرسالها للأستاذة.")
+            for idx, q in enumerate(st.session_state.quizzes):
+                st.markdown(f"**سؤال ({idx+1}): {q['question']}**")
+                user_ans = st.radio(f"اختر الإجابة المناسبة:", q['options'], key=f"quiz_{idx}")
+                
+                if st.button(f"إرسال إجابة السؤال {idx+1}", key=f"btn_{idx}"):
+                    if user_ans == q['answer']:
+                        result_msg = "إجابة صحيحة (10/10) 🌟"
+                        st.success(result_msg)
+                    else:
+                        result_msg = f"إجابة خاطئة (0/10). الإجابة الصحيحة هي: {q['answer']}"
+                        st.error(result_msg)
+                    
+                    # تسجيل النتيجة للوحة الأستاذة
+                    st.session_state.grades[f"{user_info['name']} (سؤال {idx+1})"] = result_msg
 
         elif choice == "💬 مراسلة الأستاذة":
             st.header("💬 إرسال استفسار أو سؤال للأستاذة")
@@ -181,4 +212,8 @@ else:
             if st.button("إرسال الرسالة"):
                 if user_msg:
                     if st.session_state.current_user not in st.session_state.messages:
-                        st.session_state.messages
+                        st.session_state.messages[st.session_state.current_user] = []
+                    st.session_state.messages[st.session_state.current_user].append(f"الطالب: {user_msg}")
+                    st.success("تم إرسال رسالتك إلى الأستاذة بنجاح!")
+                else:
+                    st.warning("يرجى كتابة النص قبل الإرسال.")
